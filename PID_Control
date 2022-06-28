@@ -1,0 +1,85 @@
+
+volatile unsigned int pulsos;
+unsigned long timeold = 0;;
+int pinoSensor = 2;
+unsigned int aletasDisco = 32;    //Altere o valor conforme disco encoder
+double raioDisco = 0.0075;
+double rpm;
+double radPorSec;
+
+int incomingByte = 0;
+double velocidadeReferencia = 750;  // Referência de entrada em RPM
+double K = 0.009;
+//double Ki = 0.025;
+//double K = 0.05945;
+double u0 = 0;
+double u1 = 0;
+double u2 = 0;
+double e0 = 0;
+double e1 = 0;
+double e2 = 0;
+
+void contador()
+{
+  pulsos++;  //Incrementa contador
+}
+
+double readSensor() {
+  double RPM;
+
+  if (millis() - timeold >= 100)
+  {
+    detachInterrupt(digitalPinToInterrupt(pinoSensor));    //Desabilita interrupção durante o cálculo para evitar sair do IF
+    radPorSec = (pulsos * 2 * PI ) / (aletasDisco * raioDisco * (millis() - timeold));
+    RPM = radPorSec * 9.5493;
+    timeold = millis();
+    pulsos = 0;
+
+    // Habilita novamente a interrupção
+    attachInterrupt(digitalPinToInterrupt(pinoSensor), contador, FALLING);
+  }
+
+  return RPM;
+}
+
+void setup() {
+  Serial.begin(250000);
+  pinMode(pinoSensor, INPUT);
+  attachInterrupt(digitalPinToInterrupt(pinoSensor), contador, FALLING);
+  pinMode(5, OUTPUT);
+}
+
+void loop() {
+  rpm = readSensor();
+  e0 = velocidadeReferencia - rpm;
+  u0 = u2 + K * e2 * 19.05 - K * e1 * 39.9 + K * e0 * 21.05;
+
+  if (u0 > 255)
+    u0 = 255;
+  else if (u0 < 0)
+    u0 = 0;
+
+  analogWrite(5, u0);
+  e2 = e1;
+  e1 = e0;
+  u2 = u1;
+  u1 = u0;
+
+
+  Serial.print("RPM: ");
+  Serial.print(rpm);
+  Serial.print("                         ");
+  Serial.print(1);
+  Serial.print(" ");
+  Serial.println(1200);
+  if (Serial.available() > 0) {
+    incomingByte = Serial.parseInt();
+    if (incomingByte > 0)
+      velocidadeReferencia = double(incomingByte);
+    if (velocidadeReferencia > 600)
+      K = 0.02;
+    else
+      K = 0.009;
+  }
+
+}
