@@ -11,3 +11,5 @@ E: Fisrt photodiode out
 F: second photodiode out
 
 ![image](https://user-images.githubusercontent.com/59540104/176082554-90e8871b-6a84-44e5-8acf-0825e355ee45.png)
+
+Reference: https://forum.arduino.cc/t/solved-trouble-using-an-optical-encoder-salvaged-from-an-hp-scanner-printer/152620
